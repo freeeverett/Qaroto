@@ -8,10 +8,6 @@ struct SpotBalance: Codable {
     let locked: String
 }
 
-struct SpotBalanceResponse: Codable {
-    let balances: [SpotBalance]
-}
-
 struct SpotOrder: Codable {
     let symbol: String
     let orderId: Int64

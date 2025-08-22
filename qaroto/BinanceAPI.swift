@@ -79,7 +79,13 @@ class BinanceAPI {
         }
         
         let headers = createHeaders(apiKey: apiKey)
-        let response: SpotBalanceResponse = try await performRequest(url: url, headers: headers, responseType: SpotBalanceResponse.self)
+        
+        // Binance /api/v3/account returns an object with balances array
+        struct AccountResponse: Codable {
+            let balances: [SpotBalance]
+        }
+        
+        let response: AccountResponse = try await performRequest(url: url, headers: headers, responseType: AccountResponse.self)
         
         return response.balances.filter { Double($0.free) ?? 0 > 0 || Double($0.locked) ?? 0 > 0 }
     }
@@ -142,6 +148,104 @@ class BinanceAPI {
         
         let headers = createHeaders(apiKey: apiKey)
         return try await performRequest(url: url, headers: headers, responseType: [ContractOrder].self)
+    }
+    
+    // MARK: - Order Management Methods
+    
+    func createSpotOrder(apiKey: String, secretKey: String, symbol: String, side: String, type: String, quantity: String, price: String?) async throws -> String {
+        let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
+        var query = "symbol=\(symbol)&side=\(side)&type=\(type)&quantity=\(quantity)&timestamp=\(timestamp)"
+        
+        if let price = price, type == "LIMIT" {
+            query += "&price=\(price)&timeInForce=GTC"
+        }
+        
+        let signature = createSignature(query: query, secretKey: secretKey)
+        let finalQuery = "\(query)&signature=\(signature)"
+        
+        guard let url = URL(string: "\(baseURL)/api/v3/order") else {
+            throw BinanceAPIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = finalQuery.data(using: .utf8)
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        let headers = createHeaders(apiKey: apiKey)
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            let errorString = String(data: data, encoding: .utf8) ?? "Invalid response"
+            throw BinanceAPIError.invalidResponse(errorString)
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let errorString = String(data: data, encoding: .utf8) ?? "HTTP Error: \(httpResponse.statusCode)"
+            throw BinanceAPIError.httpError(httpResponse.statusCode, errorString)
+        }
+        
+        struct OrderResponse: Codable {
+            let orderId: Int64
+        }
+        
+        do {
+            let orderResponse = try JSONDecoder().decode(OrderResponse.self, from: data)
+            return String(orderResponse.orderId)
+        } catch {
+            let dataString = String(data: data, encoding: .utf8) ?? "Invalid data"
+            throw BinanceAPIError.decodingError(error, dataString)
+        }
+    }
+    
+    func cancelSpotOrder(apiKey: String, secretKey: String, symbol: String, orderId: String) async throws -> String {
+        let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
+        let query = "symbol=\(symbol)&orderId=\(orderId)&timestamp=\(timestamp)"
+        let signature = createSignature(query: query, secretKey: secretKey)
+        let finalQuery = "\(query)&signature=\(signature)"
+        
+        guard let url = URL(string: "\(baseURL)/api/v3/order") else {
+            throw BinanceAPIError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.httpBody = finalQuery.data(using: .utf8)
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+        let headers = createHeaders(apiKey: apiKey)
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            let errorString = String(data: data, encoding: .utf8) ?? "Invalid response"
+            throw BinanceAPIError.invalidResponse(errorString)
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let errorString = String(data: data, encoding: .utf8) ?? "HTTP Error: \(httpResponse.statusCode)"
+            throw BinanceAPIError.httpError(httpResponse.statusCode, errorString)
+        }
+        
+        struct CancelResponse: Codable {
+            let orderId: Int64
+            let status: String
+        }
+        
+        do {
+            let cancelResponse = try JSONDecoder().decode(CancelResponse.self, from: data)
+            return "Order \(cancelResponse.orderId) cancelled with status: \(cancelResponse.status)"
+        } catch {
+            let dataString = String(data: data, encoding: .utf8) ?? "Invalid data"
+            throw BinanceAPIError.decodingError(error, dataString)
+        }
     }
 }
 
