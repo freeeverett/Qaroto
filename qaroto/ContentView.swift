@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var credentials = BinanceCredentials()
     @StateObject private var dataStore = BinanceDataStore()
+    @State private var selectedTab = 0
     
     var body: some View {
         NavigationView {
@@ -13,7 +14,7 @@ struct ContentView: View {
                     
                     // Main Content
                     if !credentials.apiKey.isEmpty && !credentials.secretKey.isEmpty && (!credentials.requiresPassphrase || !credentials.passphrase.isEmpty) {
-                        mainContentView
+                        tabView
                     } else {
                         emptyStateView
                     }
@@ -67,7 +68,7 @@ struct ContentView: View {
                         .tag(exchange)
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
+                .pickerStyle(MenuPickerStyle())
             }
             
             // API Credentials Input
@@ -149,9 +150,33 @@ struct ContentView: View {
         .padding()
     }
     
-    // MARK: - Main Content View
+    // MARK: - Tab View
     
-    private var mainContentView: some View {
+    private var tabView: some View {
+        VStack(spacing: 0) {
+            // Tab Selection
+            Picker("Tab", selection: $selectedTab) {
+                Text("Current Information").tag(0)
+                Text("Order Operations").tag(1)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding(.horizontal)
+            .padding(.bottom, 20)
+            
+            // Tab Content
+            Group {
+                if selectedTab == 0 {
+                    currentInformationView
+                } else {
+                    orderOperationsView
+                }
+            }
+        }
+    }
+    
+    // MARK: - Current Information View (formerly mainContentView)
+    
+    private var currentInformationView: some View {
         LazyVStack(spacing: 20) {
             // Spot Balance Section
             sectionCard(title: "Spot Balance", icon: "dollarsign.circle.fill", color: .green) {
@@ -200,6 +225,129 @@ struct ContentView: View {
         }
         .padding(.horizontal)
         .padding(.bottom)
+    }
+    
+    // MARK: - Order Operations View
+    
+    private var orderOperationsView: some View {
+        VStack(spacing: 20) {
+            // Create Order Section
+            sectionCard(title: "Create Order", icon: "plus.circle.fill", color: .green) {
+                createOrderView
+            }
+            
+            // Cancel Order Section
+            sectionCard(title: "Cancel Order", icon: "minus.circle.fill", color: .red) {
+                cancelOrderView
+            }
+        }
+        .padding(.horizontal)
+        .padding(.bottom)
+    }
+    
+    // MARK: - Create Order View
+    
+    private var createOrderView: some View {
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Order creation functionality will be implemented here")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                // Placeholder for order creation form
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("Symbol:")
+                            .frame(width: 80, alignment: .leading)
+                            .foregroundColor(.secondary)
+                        TextField("e.g., BTCUSDT", text: .constant(""))
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .disabled(true)
+                    }
+                    
+                    HStack {
+                        Text("Side:")
+                            .frame(width: 80, alignment: .leading)
+                            .foregroundColor(.secondary)
+                        Picker("Side", selection: .constant("BUY")) {
+                            Text("BUY").tag("BUY")
+                            Text("SELL").tag("SELL")
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .disabled(true)
+                    }
+                    
+                    HStack {
+                        Text("Price:")
+                            .frame(width: 80, alignment: .leading)
+                            .foregroundColor(.secondary)
+                        TextField("Price", text: .constant(""))
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .disabled(true)
+                    }
+                    
+                    HStack {
+                        Text("Quantity:")
+                            .frame(width: 80, alignment: .leading)
+                            .foregroundColor(.secondary)
+                        TextField("Quantity", text: .constant(""))
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .disabled(true)
+                    }
+                }
+                
+                Button("Create Order") {
+                    // TODO: Implement order creation
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(true)
+                .frame(maxWidth: .infinity)
+            }
+        }
+    }
+    
+    // MARK: - Cancel Order View
+    
+    private var cancelOrderView: some View {
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Order cancellation functionality will be implemented here")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                // Placeholder for order cancellation form
+                VStack(spacing: 12) {
+                    HStack {
+                        Text("Symbol:")
+                            .frame(width: 80, alignment: .leading)
+                            .foregroundColor(.secondary)
+                        TextField("e.g., BTCUSDT", text: .constant(""))
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .disabled(true)
+                    }
+                    
+                    HStack {
+                        Text("Order ID:")
+                            .frame(width: 80, alignment: .leading)
+                            .foregroundColor(.secondary)
+                        TextField("Order ID", text: .constant(""))
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .disabled(true)
+                    }
+                }
+                
+                Button("Cancel Order") {
+                    // TODO: Implement order cancellation
+                }
+                .buttonStyle(.bordered)
+                .foregroundColor(.red)
+                .tint(.red)
+                .disabled(true)
+                .frame(maxWidth: .infinity)
+            }
+        }
     }
     
     // MARK: - Empty State View
