@@ -227,6 +227,143 @@ class OKXAPI {
             )
         }
     }
+    
+    // MARK: - Order Management Methods
+    
+    func createSpotOrder(apiKey: String, secretKey: String, passphrase: String, symbol: String, side: String, type: String, quantity: String, price: String?) async throws -> String {
+        let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
+        let requestPath = "/api/v5/trade/order"
+        
+        var orderData: [String: Any] = [
+            "instId": symbol,
+            "tdMode": "cash",
+            "side": side.lowercased(),
+            "ordType": type.lowercased(),
+            "sz": quantity
+        ]
+        
+        if let price = price, type.lowercased() == "limit" {
+            orderData["px"] = price
+        }
+        
+        let body = try JSONSerialization.data(withJSONObject: orderData)
+        let bodyString = String(data: body, encoding: .utf8) ?? ""
+        
+        guard let url = URL(string: "\(baseURL)\(requestPath)") else {
+            throw OKXAPIError.invalidURL
+        }
+        
+        let headers = createHeaders(apiKey: apiKey, secretKey: secretKey, passphrase: passphrase, timestamp: timestamp, method: "POST", requestPath: requestPath, body: bodyString)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            let errorString = String(data: data, encoding: .utf8) ?? "Invalid response"
+            throw OKXAPIError.invalidResponse(errorString)
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let errorString = String(data: data, encoding: .utf8) ?? "HTTP Error: \(httpResponse.statusCode)"
+            throw OKXAPIError.httpError(httpResponse.statusCode, errorString)
+        }
+        
+        struct CreateOrderResponse: Codable {
+            let code: String
+            let msg: String
+            let data: [CreateOrderData]
+        }
+        
+        struct CreateOrderData: Codable {
+            let ordId: String
+            let clOrdId: String
+            let sCode: String
+            let sMsg: String
+        }
+        
+        do {
+            let orderResponse = try JSONDecoder().decode(CreateOrderResponse.self, from: data)
+            if let orderData = orderResponse.data.first {
+                return orderData.ordId
+            } else {
+                throw OKXAPIError.invalidResponse("No order data returned")
+            }
+        } catch {
+            let dataString = String(data: data, encoding: .utf8) ?? "Invalid data"
+            throw OKXAPIError.decodingError(error, dataString)
+        }
+    }
+    
+    func cancelSpotOrder(apiKey: String, secretKey: String, passphrase: String, symbol: String, orderId: String) async throws -> String {
+        let timestamp = String(Int(Date().timeIntervalSince1970 * 1000))
+        let requestPath = "/api/v5/trade/cancel-order"
+        
+        let orderData: [String: Any] = [
+            "instId": symbol,
+            "ordId": orderId
+        ]
+        
+        let body = try JSONSerialization.data(withJSONObject: orderData)
+        let bodyString = String(data: body, encoding: .utf8) ?? ""
+        
+        guard let url = URL(string: "\(baseURL)\(requestPath)") else {
+            throw OKXAPIError.invalidURL
+        }
+        
+        let headers = createHeaders(apiKey: apiKey, secretKey: secretKey, passphrase: passphrase, timestamp: timestamp, method: "POST", requestPath: requestPath, body: bodyString)
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            let errorString = String(data: data, encoding: .utf8) ?? "Invalid response"
+            throw OKXAPIError.invalidResponse(errorString)
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            let errorString = String(data: data, encoding: .utf8) ?? "HTTP Error: \(httpResponse.statusCode)"
+            throw OKXAPIError.httpError(httpResponse.statusCode, errorString)
+        }
+        
+        struct CancelOrderResponse: Codable {
+            let code: String
+            let msg: String
+            let data: [CancelOrderData]
+        }
+        
+        struct CancelOrderData: Codable {
+            let ordId: String
+            let clOrdId: String
+            let sCode: String
+            let sMsg: String
+        }
+        
+        do {
+            let cancelResponse = try JSONDecoder().decode(CancelOrderResponse.self, from: data)
+            if let orderData = cancelResponse.data.first {
+                return "Order \(orderData.ordId) cancellation: \(orderData.sMsg)"
+            } else {
+                throw OKXAPIError.invalidResponse("No cancellation data returned")
+            }
+        } catch {
+            let dataString = String(data: data, encoding: .utf8) ?? "Invalid data"
+            throw OKXAPIError.decodingError(error, dataString)
+        }
+    }
 }
 
 enum OKXAPIError: Error, LocalizedError {

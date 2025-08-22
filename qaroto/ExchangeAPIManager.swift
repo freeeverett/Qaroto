@@ -49,4 +49,24 @@ class ExchangeAPIManager {
             return try await OKXAPI.shared.getContractOpenOrders(apiKey: apiKey, secretKey: secretKey, passphrase: passphrase)
         }
     }
+    
+    // MARK: - Order Management Methods
+    
+    func createSpotOrder(exchange: Exchange, apiKey: String, secretKey: String, passphrase: String = "", symbol: String, side: String, type: String, quantity: String, price: String?) async throws -> String {
+        switch exchange {
+        case .binance:
+            return try await BinanceAPI.shared.createSpotOrder(apiKey: apiKey, secretKey: secretKey, symbol: symbol, side: side, type: type, quantity: quantity, price: price)
+        case .okx:
+            return try await OKXAPI.shared.createSpotOrder(apiKey: apiKey, secretKey: secretKey, passphrase: passphrase, symbol: symbol, side: side, type: type, quantity: quantity, price: price)
+        }
+    }
+    
+    func cancelSpotOrder(exchange: Exchange, apiKey: String, secretKey: String, passphrase: String = "", symbol: String, orderId: String) async throws -> String {
+        switch exchange {
+        case .binance:
+            return try await BinanceAPI.shared.cancelSpotOrder(apiKey: apiKey, secretKey: secretKey, symbol: symbol, orderId: orderId)
+        case .okx:
+            return try await OKXAPI.shared.cancelSpotOrder(apiKey: apiKey, secretKey: secretKey, passphrase: passphrase, symbol: symbol, orderId: orderId)
+        }
+    }
 }

@@ -5,6 +5,20 @@ struct ContentView: View {
     @StateObject private var dataStore = BinanceDataStore()
     @State private var selectedTab = 0
     
+    // Order form state
+    @State private var createOrderSymbol = ""
+    @State private var createOrderSide = "BUY"
+    @State private var createOrderType = "LIMIT"
+    @State private var createOrderPrice = ""
+    @State private var createOrderQuantity = ""
+    @State private var createOrderLoading = false
+    @State private var createOrderMessage = ""
+    
+    @State private var cancelOrderSymbol = ""
+    @State private var cancelOrderId = ""
+    @State private var cancelOrderLoading = false
+    @State private var cancelOrderMessage = ""
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -250,59 +264,85 @@ struct ContentView: View {
     private var createOrderView: some View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Order creation functionality will be implemented here")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                
-                // Placeholder for order creation form
+                // Order creation form
                 VStack(spacing: 12) {
                     HStack {
                         Text("Symbol:")
                             .frame(width: 80, alignment: .leading)
                             .foregroundColor(.secondary)
-                        TextField("e.g., BTCUSDT", text: .constant(""))
+                        TextField("e.g., BTCUSDT", text: $createOrderSymbol)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .disabled(true)
+                            .autocapitalization(.allCharacters)
                     }
                     
                     HStack {
                         Text("Side:")
                             .frame(width: 80, alignment: .leading)
                             .foregroundColor(.secondary)
-                        Picker("Side", selection: .constant("BUY")) {
+                        Picker("Side", selection: $createOrderSide) {
                             Text("BUY").tag("BUY")
                             Text("SELL").tag("SELL")
                         }
                         .pickerStyle(SegmentedPickerStyle())
-                        .disabled(true)
                     }
                     
                     HStack {
-                        Text("Price:")
+                        Text("Type:")
                             .frame(width: 80, alignment: .leading)
                             .foregroundColor(.secondary)
-                        TextField("Price", text: .constant(""))
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .disabled(true)
+                        Picker("Type", selection: $createOrderType) {
+                            Text("LIMIT").tag("LIMIT")
+                            Text("MARKET").tag("MARKET")
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                    }
+                    
+                    if createOrderType == "LIMIT" {
+                        HStack {
+                            Text("Price:")
+                                .frame(width: 80, alignment: .leading)
+                                .foregroundColor(.secondary)
+                            TextField("Price", text: $createOrderPrice)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .keyboardType(.decimalPad)
+                        }
                     }
                     
                     HStack {
                         Text("Quantity:")
                             .frame(width: 80, alignment: .leading)
                             .foregroundColor(.secondary)
-                        TextField("Quantity", text: .constant(""))
+                        TextField("Quantity", text: $createOrderQuantity)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .disabled(true)
+                            .keyboardType(.decimalPad)
                     }
                 }
                 
-                Button("Create Order") {
-                    // TODO: Implement order creation
+                HStack {
+                    Button("Create Order") {
+                        Task {
+                            await createOrder()
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!canCreateOrder || createOrderLoading)
+                    .frame(maxWidth: .infinity)
+                    
+                    if createOrderLoading {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(true)
-                .frame(maxWidth: .infinity)
+                
+                if !createOrderMessage.isEmpty {
+                    Text(createOrderMessage)
+                        .font(.caption)
+                        .foregroundColor(createOrderMessage.contains("successfully") ? .green : .red)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background((createOrderMessage.contains("successfully") ? Color.green : Color.red).opacity(0.1))
+                        .cornerRadius(8)
+                }
             }
         }
     }
@@ -312,40 +352,54 @@ struct ContentView: View {
     private var cancelOrderView: some View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Order cancellation functionality will be implemented here")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                
-                // Placeholder for order cancellation form
+                // Order cancellation form
                 VStack(spacing: 12) {
                     HStack {
                         Text("Symbol:")
                             .frame(width: 80, alignment: .leading)
                             .foregroundColor(.secondary)
-                        TextField("e.g., BTCUSDT", text: .constant(""))
+                        TextField("e.g., BTCUSDT", text: $cancelOrderSymbol)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .disabled(true)
+                            .autocapitalization(.allCharacters)
                     }
                     
                     HStack {
                         Text("Order ID:")
                             .frame(width: 80, alignment: .leading)
                             .foregroundColor(.secondary)
-                        TextField("Order ID", text: .constant(""))
+                        TextField("Order ID", text: $cancelOrderId)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .disabled(true)
+                            .keyboardType(.numberPad)
                     }
                 }
                 
-                Button("Cancel Order") {
-                    // TODO: Implement order cancellation
+                HStack {
+                    Button("Cancel Order") {
+                        Task {
+                            await cancelOrder()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .foregroundColor(.red)
+                    .tint(.red)
+                    .disabled(!canCancelOrder || cancelOrderLoading)
+                    .frame(maxWidth: .infinity)
+                    
+                    if cancelOrderLoading {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    }
                 }
-                .buttonStyle(.bordered)
-                .foregroundColor(.red)
-                .tint(.red)
-                .disabled(true)
-                .frame(maxWidth: .infinity)
+                
+                if !cancelOrderMessage.isEmpty {
+                    Text(cancelOrderMessage)
+                        .font(.caption)
+                        .foregroundColor(cancelOrderMessage.contains("cancelled") ? .green : .red)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background((cancelOrderMessage.contains("cancelled") ? Color.green : Color.red).opacity(0.1))
+                        .cornerRadius(8)
+                }
             }
         }
     }
@@ -728,6 +782,19 @@ struct ContentView: View {
         (!credentials.requiresPassphrase || !credentials.passphrase.isEmpty)
     }
     
+    private var canCreateOrder: Bool {
+        canRefresh && 
+        !createOrderSymbol.isEmpty && 
+        !createOrderQuantity.isEmpty &&
+        (createOrderType == "MARKET" || !createOrderPrice.isEmpty)
+    }
+    
+    private var canCancelOrder: Bool {
+        canRefresh && 
+        !cancelOrderSymbol.isEmpty && 
+        !cancelOrderId.isEmpty
+    }
+    
     // MARK: - Private Methods
     
     private func refreshAllData() async {
@@ -781,8 +848,14 @@ struct ContentView: View {
             }
         } catch {
             await MainActor.run {
-                // Show raw error message as requested
-                dataStore.errorMessage = error.localizedDescription
+                // Show detailed error message for better debugging
+                if let apiError = error as? BinanceAPIError {
+                    dataStore.errorMessage = apiError.errorDescription ?? "Unknown Binance API error"
+                } else if let apiError = error as? OKXAPIError {
+                    dataStore.errorMessage = apiError.errorDescription ?? "Unknown OKX API error"
+                } else {
+                    dataStore.errorMessage = "Error: \(error.localizedDescription)"
+                }
                 dataStore.isLoading = false
             }
         }
@@ -796,6 +869,87 @@ struct ContentView: View {
         dataStore.contractOrders = []
         dataStore.errorMessage = nil
         dataStore.lastRefreshTime = nil
+    }
+    
+    // MARK: - Order Management Methods
+    
+    private func createOrder() async {
+        guard canCreateOrder else { return }
+        
+        createOrderLoading = true
+        createOrderMessage = ""
+        
+        do {
+            let price = createOrderType == "LIMIT" ? createOrderPrice : nil
+            let orderId = try await ExchangeAPIManager.shared.createSpotOrder(
+                exchange: credentials.exchange,
+                apiKey: credentials.apiKey,
+                secretKey: credentials.secretKey,
+                passphrase: credentials.passphrase,
+                symbol: createOrderSymbol,
+                side: createOrderSide,
+                type: createOrderType,
+                quantity: createOrderQuantity,
+                price: price
+            )
+            
+            await MainActor.run {
+                createOrderMessage = "Order created successfully! ID: \(orderId)"
+                createOrderLoading = false
+                
+                // Clear form
+                createOrderSymbol = ""
+                createOrderPrice = ""
+                createOrderQuantity = ""
+                
+                // Refresh data to show new order
+                Task {
+                    await refreshAllData()
+                }
+            }
+        } catch {
+            await MainActor.run {
+                createOrderMessage = "Error creating order: \(error.localizedDescription)"
+                createOrderLoading = false
+            }
+        }
+    }
+    
+    private func cancelOrder() async {
+        guard canCancelOrder else { return }
+        
+        cancelOrderLoading = true
+        cancelOrderMessage = ""
+        
+        do {
+            let result = try await ExchangeAPIManager.shared.cancelSpotOrder(
+                exchange: credentials.exchange,
+                apiKey: credentials.apiKey,
+                secretKey: credentials.secretKey,
+                passphrase: credentials.passphrase,
+                symbol: cancelOrderSymbol,
+                orderId: cancelOrderId
+            )
+            
+            await MainActor.run {
+                cancelOrderMessage = result
+                cancelOrderLoading = false
+                
+                // Clear form
+                cancelOrderSymbol = ""
+                cancelOrderId = ""
+                
+                // Refresh data to show updated orders
+                Task {
+                    await refreshAllData()
+                }
+            }
+        } catch {
+            await MainActor.run {
+                cancelOrderMessage = "Error cancelling order: \(error.localizedDescription)"
+                cancelOrderLoading = false
+            }
+        }
     }
 }
 
