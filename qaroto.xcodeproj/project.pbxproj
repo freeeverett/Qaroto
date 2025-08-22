@@ -39,7 +39,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		014 = {
+		014 /* Root Group */ = {
 			isa = PBXGroup;
 			children = (
 				015 /* qaroto */,
