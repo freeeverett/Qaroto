@@ -45,18 +45,24 @@ class BinanceAPI {
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw BinanceAPIError.invalidResponse
+            // Return raw response data as string for error handling
+            let errorString = String(data: data, encoding: .utf8) ?? "Invalid response"
+            throw BinanceAPIError.invalidResponse(errorString)
         }
         
         guard httpResponse.statusCode == 200 else {
-            throw BinanceAPIError.httpError(httpResponse.statusCode)
+            // Return raw error response
+            let errorString = String(data: data, encoding: .utf8) ?? "HTTP Error: \(httpResponse.statusCode)"
+            throw BinanceAPIError.httpError(httpResponse.statusCode, errorString)
         }
         
         do {
             let result = try JSONDecoder().decode(responseType, from: data)
             return result
         } catch {
-            throw BinanceAPIError.decodingError(error)
+            // Return raw JSON data for decoding errors
+            let dataString = String(data: data, encoding: .utf8) ?? "Invalid data"
+            throw BinanceAPIError.decodingError(error, dataString)
         }
     }
     
@@ -141,20 +147,20 @@ class BinanceAPI {
 
 enum BinanceAPIError: Error, LocalizedError {
     case invalidURL
-    case invalidResponse
-    case httpError(Int)
-    case decodingError(Error)
+    case invalidResponse(String)
+    case httpError(Int, String)
+    case decodingError(Error, String)
     
     var errorDescription: String? {
         switch self {
         case .invalidURL:
             return "Invalid URL"
-        case .invalidResponse:
-            return "Invalid response"
-        case .httpError(let code):
-            return "HTTP Error: \(code)"
-        case .decodingError(let error):
-            return "Decoding error: \(error.localizedDescription)"
+        case .invalidResponse(let raw):
+            return "Invalid response: \(raw)"
+        case .httpError(let code, let raw):
+            return "HTTP Error \(code): \(raw)"
+        case .decodingError(let error, let raw):
+            return "Decoding error: \(error.localizedDescription). Raw data: \(raw)"
         }
     }
 }
