@@ -73,6 +73,58 @@ struct ContractPosition: Codable {
     let notional: String
     let isolatedWallet: String
     let updateTime: Int64?
+    
+    // Custom decoding to handle both positionAmt and postationAmt (API typo)
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: AnyCodingKey.self)
+        
+        symbol = try container.decode(String.self, forKey: AnyCodingKey("symbol"))
+        initialMargin = try container.decode(String.self, forKey: AnyCodingKey("initialMargin"))
+        maintMargin = try container.decode(String.self, forKey: AnyCodingKey("maintMargin"))
+        unrealizedProfit = try container.decode(String.self, forKey: AnyCodingKey("unrealizedProfit"))
+        positionInitialMargin = try container.decode(String.self, forKey: AnyCodingKey("positionInitialMargin"))
+        openOrderInitialMargin = try container.decode(String.self, forKey: AnyCodingKey("openOrderInitialMargin"))
+        leverage = try container.decode(String.self, forKey: AnyCodingKey("leverage"))
+        isolated = try container.decode(Bool.self, forKey: AnyCodingKey("isolated"))
+        entryPrice = try container.decode(String.self, forKey: AnyCodingKey("entryPrice"))
+        maxNotional = try container.decode(String.self, forKey: AnyCodingKey("maxNotional"))
+        positionSide = try container.decode(String.self, forKey: AnyCodingKey("positionSide"))
+        notional = try container.decode(String.self, forKey: AnyCodingKey("notional"))
+        isolatedWallet = try container.decode(String.self, forKey: AnyCodingKey("isolatedWallet"))
+        updateTime = try container.decodeIfPresent(Int64.self, forKey: AnyCodingKey("updateTime"))
+        
+        // Handle both positionAmt and postationAmt (API typo)
+        if let correctPositionAmt = try? container.decode(String.self, forKey: AnyCodingKey("positionAmt")) {
+            positionAmt = correctPositionAmt
+        } else if let typoPositionAmt = try? container.decode(String.self, forKey: AnyCodingKey("postationAmt")) {
+            positionAmt = typoPositionAmt
+        } else {
+            throw DecodingError.keyNotFound(AnyCodingKey("positionAmt"), 
+                DecodingError.Context(codingPath: decoder.codingPath, 
+                                    debugDescription: "Expected either 'positionAmt' or 'postationAmt' key"))
+        }
+    }
+}
+
+// Helper struct for dynamic coding keys
+private struct AnyCodingKey: CodingKey {
+    var stringValue: String
+    var intValue: Int?
+    
+    init(_ string: String) {
+        self.stringValue = string
+        self.intValue = nil
+    }
+    
+    init(stringValue: String) {
+        self.stringValue = stringValue
+        self.intValue = nil
+    }
+    
+    init(intValue: Int) {
+        self.stringValue = String(intValue)
+        self.intValue = intValue
+    }
 }
 
 struct ContractOrder: Codable {
