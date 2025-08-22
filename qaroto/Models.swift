@@ -74,6 +74,28 @@ struct ContractPosition: Codable {
     let isolatedWallet: String
     let updateTime: Int64?
     
+    // Memberwise initializer
+    init(symbol: String, initialMargin: String, maintMargin: String, unrealizedProfit: String, 
+         positionInitialMargin: String, openOrderInitialMargin: String, leverage: String, 
+         isolated: Bool, entryPrice: String, maxNotional: String, positionSide: String, 
+         positionAmt: String, notional: String, isolatedWallet: String, updateTime: Int64?) {
+        self.symbol = symbol
+        self.initialMargin = initialMargin
+        self.maintMargin = maintMargin
+        self.unrealizedProfit = unrealizedProfit
+        self.positionInitialMargin = positionInitialMargin
+        self.openOrderInitialMargin = openOrderInitialMargin
+        self.leverage = leverage
+        self.isolated = isolated
+        self.entryPrice = entryPrice
+        self.maxNotional = maxNotional
+        self.positionSide = positionSide
+        self.positionAmt = positionAmt
+        self.notional = notional
+        self.isolatedWallet = isolatedWallet
+        self.updateTime = updateTime
+    }
+    
     // Custom decoding to handle both positionAmt and postationAmt (API typo)
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: AnyCodingKey.self)
