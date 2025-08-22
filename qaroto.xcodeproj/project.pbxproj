@@ -12,6 +12,8 @@
 		005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 006; };
 		007 /* BinanceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008; };
 		009 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010; };
+		022 /* ExchangeAPIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 023; };
+		024 /* OKXAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 025; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +24,8 @@
 		008 /* BinanceAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinanceAPI.swift; sourceTree = "<group>"; };
 		010 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		012 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		023 /* ExchangeAPIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeAPIManager.swift; sourceTree = "<group>"; };
+		025 /* OKXAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OKXAPI.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +62,8 @@
 				004 /* ContentView.swift */,
 				008 /* BinanceAPI.swift */,
 				010 /* Models.swift */,
+				023 /* ExchangeAPIManager.swift */,
+				025 /* OKXAPI.swift */,
 				006 /* Assets.xcassets */,
 				012 /* Info.plist */,
 			);
@@ -137,6 +143,8 @@
 				001 /* qaroToApp.swift in Sources */,
 				007 /* BinanceAPI.swift in Sources */,
 				009 /* Models.swift in Sources */,
+				022 /* ExchangeAPIManager.swift in Sources */,
+				024 /* OKXAPI.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
