@@ -107,13 +107,29 @@ struct ContractOrder: Codable {
 
 // MARK: - App State Models
 
+enum Exchange: String, CaseIterable {
+    case binance = "Binance"
+    case okx = "OKX"
+    
+    var displayName: String {
+        return self.rawValue
+    }
+}
+
 class BinanceCredentials: ObservableObject {
+    @Published var exchange: Exchange = .binance
     @Published var apiKey: String = ""
     @Published var secretKey: String = ""
+    @Published var passphrase: String = "" // For OKX
+    
+    var requiresPassphrase: Bool {
+        return exchange == .okx
+    }
     
     func clearCredentials() {
         apiKey = ""
         secretKey = ""
+        passphrase = ""
     }
 }
 
