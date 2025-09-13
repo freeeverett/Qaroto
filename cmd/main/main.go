@@ -1,23 +1,25 @@
 package main
 
 import (
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/widget"
+	"github.com/freeeverett/qaroto/internal/ui"
 )
 
 func main() {
-	// start
+	// Create new application
 	a := app.New()
-	w := a.NewWindow("qaroto")
-
-	hello := widget.NewLabel("Hello Fyne!")
-	w.SetContent(container.NewVBox(
-		hello,
-		widget.NewButton("Hi!", func() {
-			hello.SetText("Welcome :)")
-		}),
-	))
-
+	a.Settings().SetTheme(nil) // Use default theme
+	
+	// Create main window
+	w := a.NewWindow("Qaroto - Crypto Trading Interface")
+	w.Resize(fyne.NewSize(900, 700))
+	w.CenterOnScreen()
+	
+	// Create and setup the UI
+	appUI := ui.NewApp(w)
+	_ = appUI // Use the app UI instance
+	
+	// Show and run
 	w.ShowAndRun()
 }
